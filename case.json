@@ -1,0 +1,9 @@
+[
+    {
+    "_id": "2",
+    "material": ["stainless steel", "gold", "diamond"],
+    "diameter": "39mm",
+    "shape": "circle",
+    "colour": ["pink", "white"]
+    }
+]

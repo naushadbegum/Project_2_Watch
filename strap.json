@@ -1,0 +1,11 @@
+[
+    {
+    "_id": "3",
+    "material": ["leather", "rubber"],
+    "colour": ["blue", "orange"],
+    "buckle":{
+        "material":["id_142321"],
+        "colour": ["id_12232"]
+    }
+}
+]

@@ -28,6 +28,7 @@ async function main() {
         let glassMaterial = req.body.glass_material;
         let movements = req.body.movements;
         let watchCalender = req.body.watch_calender;
+        let image = req.body.image;
         let gender = req.body.gender;
         // format YYYY-MM-DD
         let datetime= new Date(req.body.datetime) || new Date();
@@ -42,12 +43,37 @@ async function main() {
             "glass_material": glassMaterial,
             "movements": movements,
             "watch_calender": watchCalender,
+            "image": image,
             "gender": gender
         }
         const db = MongoUtil.getDB();
         const result = await db.collection("listings").insertOne(watchListing);
         res.status(200);
         res.send(result);
+    })
+
+    app.get('/watch-listings', async function(req,res){
+       
+        console.log(req.query);
+       
+        let criteria = {};
+
+        if (req.query.glass_material) {
+            criteria['glass_material'] = {
+                "$regex": req.query.glass_material,
+                "$options": "i"
+            }
+        }
+
+        if (req.query.image){
+            criteria['image'] = {
+                "$in" : [req.query.image]
+            }
+        }
+
+        let results = await MongoUtil.getDB().collection("listings").find(criteria).toArray();
+        res.status(200);
+        res.json(results);
     })
 }
 main();

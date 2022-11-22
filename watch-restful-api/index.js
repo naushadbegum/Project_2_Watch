@@ -3,6 +3,8 @@ const cors = require('cors');
 
 require('dotenv').config();
 const MongoUtil = require('./MongoUtil');
+const { ObjectId } = require('mongodb');
+const WatchRecordDAL = require('./WatchRecordDAL');
 
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -11,6 +13,14 @@ const app = express();
 app.use(express.json());
 
 app.use(cors());
+
+// refactor 
+async function deleteWatchRecordByID(watchRecordId){
+    let watchRecord = await MongoUtil.getDB().collection('listings').deleteOne({
+        "_id": ObjectId(watchRecordId)
+    });
+    return watchRecord;
+}
 
 async function main() {
     await MongoUtil.connect(MONGO_URI, "restful_watch");
@@ -30,6 +40,9 @@ async function main() {
         let watchCalender = req.body.watch_calender;
         let image = req.body.image;
         let gender = req.body.gender;
+        let watchCase = req.body.watch_case;
+        let strap = req.body.strap;
+        let user = req.body.user;
         // format YYYY-MM-DD
         let datetime= new Date(req.body.datetime) || new Date();
 
@@ -44,7 +57,11 @@ async function main() {
             "movements": movements,
             "watch_calender": watchCalender,
             "image": image,
-            "gender": gender
+            "gender": gender,
+            "watch_case": ObjectId(watchCase),
+            "strap": ObjectId(strap),
+            "user": ObjectId(user),
+            "review": []
         }
         const db = MongoUtil.getDB();
         const result = await db.collection("listings").insertOne(watchListing);
@@ -75,6 +92,27 @@ async function main() {
         res.status(200);
         res.json(results);
     })
+
+    app.delete('/watch-listings/:listing_id',async function(req,res){
+        try{
+            await WatchRecordDAL.deleteWatchRecordByID(req.params.listing_id);
+    // await MongoUtil.getDB().collection('listings').deleteOne({
+    // "_id": ObjectId(req.params.listing_id)
+    // })
+
+    res.status(200);
+    res.json({
+    'message': "Food sighting has been deleted"
+})
+
+        }catch (e)
+ {
+    res.status(500);
+    res.json({
+        "error": e
+    });
+    console.log(e);
+ }    })
 }
 main();
 

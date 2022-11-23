@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(cors());
 
 // refactor 
-async function deleteWatchRecordByID(watchRecordId){
+async function deleteWatchRecordByID(watchRecordId) {
     let watchRecord = await MongoUtil.getDB().collection('listings').deleteOne({
         "_id": ObjectId(watchRecordId)
     });
@@ -25,11 +25,11 @@ async function deleteWatchRecordByID(watchRecordId){
 async function main() {
     await MongoUtil.connect(MONGO_URI, "restful_watch");
     console.log("Database connected")
-    app.get('/', function(req,res){
+    app.get('/', function (req, res) {
         res.send("hello world");
     })
 
-    app.post('/watch-listings', async function(req,res){
+    app.post('/watch-listings', async function (req, res) {
         let brand = req.body.brand;
         let model = req.body.model;
         let price = req.body.price;
@@ -44,7 +44,7 @@ async function main() {
         let strap = req.body.strap;
         let user = req.body.user;
         // format YYYY-MM-DD
-        let datetime= new Date(req.body.datetime) || new Date();
+        let datetime = new Date(req.body.datetime) || new Date();
 
         let watchListing = {
             "brand": brand,
@@ -69,10 +69,10 @@ async function main() {
         res.send(result);
     })
 
-    app.get('/watch-listings', async function(req,res){
-       
+    app.get('/watch-listings', async function (req, res) {
+
         console.log(req.query);
-       
+
         let criteria = {};
 
         if (req.query.glass_material) {
@@ -82,9 +82,9 @@ async function main() {
             }
         }
 
-        if (req.query.image){
+        if (req.query.image) {
             criteria['image'] = {
-                "$in" : [req.query.image]
+                "$in": [req.query.image]
             }
         }
 
@@ -93,29 +93,55 @@ async function main() {
         res.json(results);
     })
 
-    app.delete('/watch-listings/:listing_id',async function(req,res){
-        try{
+    app.put('/watch-listings/:listing_id', async function (req, res) {
+        try {
+            let { brand, model, price } = req.body;
+            let datetime = new Date(req.body.datetime) || new Date();
+            let modifiedDocument = {
+                "brand": brand,
+                "model": model,
+                "price": price
+            }
+            const result = await MongoUtil.getDB().collection('listings').updateOne({
+                "_id": ObjectId(req.params.listing_id)
+            }, {
+                '$set': modifiedDocument
+            });
+            res.status(200);
+            res.json({
+                'message': 'Update success'
+            });
+        } catch (e) {
+            res.status(500);
+            res.send(e);
+            console.log(e);
+        }
+    })
+
+
+    app.delete('/watch-listings/:listing_id', async function (req, res) {
+        try {
             await WatchRecordDAL.deleteWatchRecordByID(req.params.listing_id);
-    // await MongoUtil.getDB().collection('listings').deleteOne({
-    // "_id": ObjectId(req.params.listing_id)
-    // })
+            // await MongoUtil.getDB().collection('listings').deleteOne({
+            // "_id": ObjectId(req.params.listing_id)
+            // })
 
-    res.status(200);
-    res.json({
-    'message': "Food sighting has been deleted"
-})
+            res.status(200);
+            res.json({
+                'message': "Food sighting has been deleted"
+            })
 
-        }catch (e)
- {
-    res.status(500);
-    res.json({
-        "error": e
-    });
-    console.log(e);
- }    })
+        } catch (e) {
+            res.status(500);
+            res.json({
+                "error": e
+            });
+            console.log(e);
+        }
+    })
 }
 main();
 
-app.listen(3000, function(){
+app.listen(3000, function () {
     console.log("Server has started")
 })

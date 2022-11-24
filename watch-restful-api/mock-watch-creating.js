@@ -5,7 +5,7 @@
     "model": "submariner",
     "price": "8382",
     "year_made": "1928",
-    "water_resistence": "15 ATM",
+    "water_resistance": "15 ATM",
     "glass": "sapphire",
     "movements": "mechanical",
     "calender":{

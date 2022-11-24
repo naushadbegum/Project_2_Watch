@@ -5,6 +5,8 @@ require('dotenv').config();
 const MongoUtil = require('./MongoUtil');
 const { ObjectId } = require('mongodb');
 const WatchRecordDAL = require('./WatchRecordDAL');
+const validation = require('./Middlewares/validationMiddleware');
+const listingValidation = require('./Validations/listingValidation');
 
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -29,7 +31,98 @@ async function main() {
         res.send("hello world");
     })
 
-    app.post('/watch-listings', async function (req, res) {
+    app.get("/strap", async function(req,res){
+        let response = await db.collection("strap").find().toArray();
+        res.json(response);
+    })
+
+    app.post("/create-strap", async function (req,res) {
+        let strapMaterial = req.body.strapMaterial;
+        let strapDiameter = req.body.strapDiameter;
+        let strapShape = req.body.strapShape;
+        let strapColor = req.body.strapColor;
+
+        try{
+            let response = await db.collection("strap").insertOne({
+                strapMaterial,
+                strapDiameter,
+                strapShape,
+                strapColor
+            })
+            res.status(200);
+            res.json(response);
+        } catch(e) {
+            res.status(500);
+            res.json({
+                "message": "Interval server error. Please contact administrator"
+            })
+            console.log(e)
+        }
+    })
+
+    app.get("/listings", async function(req,res) {
+        let response = await MongoUtil.getDB().collection("listings").aggregate([
+            {
+                $lookup: {
+                    from:"strap",
+                    localField: "strap",
+                    foreignField: "_id",
+                    as: "strap",
+                }
+            },
+            {
+                $lookup: {
+                    from:"case",
+                    localField: "watch_case",
+                    foreignField: "_id",
+                    as: "watch_case",
+                }
+            },
+            {
+                $lookup: {
+                    from:"user",
+                    localField: "user",
+                    foreignField: "_id",
+                    as: "user",
+                }
+            },
+            {
+              $lookup: {
+                from: "review",
+                localField: "review",
+                foreignField: "_id",
+                as: "review"
+              }  
+            }
+        ]).toArray();
+        res.json(response);
+    })
+
+    
+
+    app.post("/create-listing", async function(req,res){
+        let strapId = ObjectId(req.body.strapId);
+
+        try{
+            let response = await db.collection("listings").insertOne({
+                strapId
+            })
+            res.status(200);
+            res.json(response);
+        } catch(e){
+            res.status(500);
+            res.json({
+                "message": "Internal server error. Please contact administrator"
+            })
+            console.log(e)
+        }
+    })
+
+    app.post('/watch-listings', validation.validation(listingValidation.listingSchema), async function (req, res) {
+
+        // create empty 
+        // validation
+
         let brand = req.body.brand;
         let model = req.body.model;
         let price = req.body.price;
@@ -44,13 +137,15 @@ async function main() {
         let strap = req.body.strap;
         let user = req.body.user;
         // format YYYY-MM-DD
-        let datetime = new Date(req.body.datetime) || new Date();
+        // let datetime = new Date(req.body.datetime) || new Date();
+
+        
 
         let watchListing = {
             "brand": brand,
             "model": model,
             "price": price,
-            "datetime": datetime,
+            // "datetime": datetime,
             "year_made": yearMade,
             "water_resistance": waterResistance,
             "glass_material": glassMaterial,
@@ -65,7 +160,7 @@ async function main() {
         }
         const db = MongoUtil.getDB();
         const result = await db.collection("listings").insertOne(watchListing);
-        res.status(200);
+        res.status(201);
         res.send(result);
     })
 

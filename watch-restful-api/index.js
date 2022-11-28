@@ -32,35 +32,42 @@ async function main() {
     })
 
     app.get("/strap", async function(req,res){
-        let response = await db.collection("strap").find().toArray();
+        let response = await MongoUtil.getDB().collection("strap").find().toArray();
         res.json(response);
     })
 
-    app.post("/create-strap", async function (req,res) {
-        let strapMaterial = req.body.strapMaterial;
-        let strapDiameter = req.body.strapDiameter;
-        let strapShape = req.body.strapShape;
-        let strapColor = req.body.strapColor;
-
-        try{
-            let response = await db.collection("strap").insertOne({
-                strapMaterial,
-                strapDiameter,
-                strapShape,
-                strapColor
-            })
-            res.status(200);
-            res.json(response);
-        } catch(e) {
-            res.status(500);
-            res.json({
-                "message": "Interval server error. Please contact administrator"
-            })
-            console.log(e)
-        }
+    app.get("/case", async function(req,res){
+        let response = await MongoUtil.getDB().collection("case").find().toArray();
+        res.json(response);
     })
 
-    app.get("/listings", async function(req,res) {
+    // app.post("/create-strap", async function (req,res) {
+    //     let strapMaterial = req.body.strapMaterial;
+    //     let strapDiameter = req.body.strapDiameter;
+    //     let strapShape = req.body.strapShape;
+    //     let strapColor = req.body.strapColor;
+
+    //     try{
+    //         let response = await db.collection("strap").insertOne({
+    //             strapMaterial,
+    //             strapDiameter,
+    //             strapShape,
+    //             strapColor
+    //         })
+    //         res.status(200);
+    //         res.json(response);
+    //     } catch(e) {
+    //         res.status(500);
+    //         res.json({
+    //             "message": "Interval server error. Please contact administrator"
+    //         })
+    //         console.log(e)
+    //     }
+    // })
+
+
+
+    app.get("/watch-listings", async function(req,res) {
         let response = await MongoUtil.getDB().collection("listings").aggregate([
             {
                 $lookup: {
@@ -98,13 +105,13 @@ async function main() {
         res.json(response);
     })
 
-    
+
 
     app.post("/create-listing", async function(req,res){
         let strapId = ObjectId(req.body.strapId);
 
         try{
-            let response = await db.collection("listings").insertOne({
+            let response = await MongoUtil.getDB().collection("listings").insertOne({
                 strapId
             })
             res.status(200);
@@ -118,7 +125,7 @@ async function main() {
         }
     })
 
-    app.post('/watch-listings', validation.validation(listingValidation.listingSchema), async function (req, res) {
+    app.post('/create-listings', validation.validation(listingValidation.listingSchema), async function (req, res) {
 
         // create empty 
         // validation
@@ -141,13 +148,13 @@ async function main() {
 
         
 
-        let watchListing = {
-            "brand": brand,
-            "model": model,
-            "price": price,
+        let createListing = {
+            "brand": brand,  //text
+            "model": model,  //text
+            "price": price,  //text
             // "datetime": datetime,
-            "year_made": yearMade,
-            "water_resistance": waterResistance,
+            "year_made": yearMade,  //text
+            "water_resistance": waterResistance,  //text
             "glass_material": glassMaterial,
             "movements": movements,
             "watch_calender": watchCalender,
@@ -159,7 +166,7 @@ async function main() {
             "review": []
         }
         const db = MongoUtil.getDB();
-        const result = await db.collection("listings").insertOne(watchListing);
+        const result = await db.collection("listings").insertOne(createListing);
         res.status(201);
         res.send(result);
     })

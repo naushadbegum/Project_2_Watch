@@ -84,22 +84,6 @@ async function main() {
                     foreignField: "_id",
                     as: "watch_case",
                 }
-            },
-            {
-                $lookup: {
-                    from:"user",
-                    localField: "user",
-                    foreignField: "_id",
-                    as: "user",
-                }
-            },
-            {
-              $lookup: {
-                from: "review",
-                localField: "review",
-                foreignField: "_id",
-                as: "review"
-              }  
             }
         ]).toArray();
         res.json(response);
@@ -162,7 +146,7 @@ async function main() {
             "gender": gender,
             "watch_case": ObjectId(watchCase),
             "strap": ObjectId(strap),
-            "user": ObjectId(user),
+            "user": user,
             "review": []
         }
         const db = MongoUtil.getDB();
@@ -170,6 +154,7 @@ async function main() {
         res.status(201);
         res.send(result);
     })
+
 
     app.get('/watch-listings', async function (req, res) {
 

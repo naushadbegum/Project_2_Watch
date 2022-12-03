@@ -1,28 +1,25 @@
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
+const ObjectId = require("mongodb").ObjectId;
+const MongoUtil = require("./MongoUtil");
 
-require('dotenv').config();
-const MongoUtil = require('./MongoUtil');
-const ObjectId = require("mongodb");
-const WatchRecordDAL = require('./WatchRecordDAL');
-const validation = require('./Middlewares/validationMiddleware');
-const listingValidation = require('./Validations/listingValidation');
-
-const MONGO_URI = process.env.MONGO_URI;
+// const WatchRecordDAL = require('./WatchRecordDAL');
+// const validation = require('./Middlewares/validationMiddleware');
+// const listingValidation = require('./Validations/listingValidation');
 
 const app = express();
-
 app.use(express.json());
-
 app.use(cors());
+const MONGO_URI = process.env.MONGO_URI;
 
 // refactor 
-async function deleteWatchRecordByID(watchRecordId) {
-    let watchRecord = await MongoUtil.getDB().collection('listings').deleteOne({
-        "_id": ObjectId(watchRecordId)
-    });
-    return watchRecord;
-}
+// async function deleteWatchRecordByID(watchRecordId) {
+//     let watchRecord = await MongoUtil.getDB().collection('listings').deleteOne({
+//         "_id": ObjectId(watchRecordId)
+//     });
+//     return watchRecord;
+// }
 
 async function main() {
     await MongoUtil.connect(MONGO_URI, "restful_watch");
@@ -91,7 +88,8 @@ async function main() {
     // })
     // app.post('/create-listings', validation.validation(listingValidation.listingSchema), async function (req, res) {
     app.post('/create-listings', async function (req, res) {
-
+console.log("req.body=", req.body)
+console.log(req.body.caseId, req.body.strapId);
         let brand = req.body.brand;
         let model = req.body.model;
         let price = req.body.price;
@@ -101,11 +99,9 @@ async function main() {
         let movements = req.body.movements;
         let image = req.body.image;
         let gender = req.body.gender;
-        let caseId = ObjectId(req.body.caseId.trim());
-        let strapId = ObjectId(req.body.strapId.trim());
+        let strapId = ObjectId(req.body.strapId);
+        let caseId = ObjectId(req.body.caseId);
         let user = req.body.user;
-
-        
 
         try{
             let response = await MongoUtil.getDB().collection("listings").insertOne({
@@ -118,8 +114,8 @@ async function main() {
                 movements,
                 image,
                 gender,
-                caseId,
                 strapId,
+                caseId,
                 user
             })
             res.status(200);
@@ -128,29 +124,42 @@ async function main() {
             res.status(500);
             res.json({
                 "message": "Internal server error."
-            })
+            });
             console.log(e)
         }
+        })
+    // app.post('/create-listings', async function (req, res) {
+    //     try {
+    //         await MongoUtil.getDB().collection("listings").insertOne({
+    //             "brand": req.body.brand,
+    //             "model": req.body.model,
+    //             "price": req.body.price,
+    //             "year_made": req.body.year_made,
+    //             "water_resistance": req.body.waterResistance,
+    //             "glass_material": req.body.glassMaterial,
+    //             "movements": req.body.movements,
+    //             "image": req.body.image,
+    //             "gender": req.body.gender,
+    //             "caseId": ObjectId(req.body.caseId),
+    //             "strapId": ObjectId(req.body.strapId),
+    //             "user": req.body.user,
+    //         })
 
-        // let createListing = {
-        //     "brand": brand,  //text
-        //     "model": model,  //text
-        //     "price": price,  //text
-        //     "year_made": yearMade,  //text
-        //     "water_resistance": waterResistance,  //text
-        //     "glass_material": glassMaterial,
-        //     "movements": movements,
-        //     "image": image,
-        //     "gender": gender,
-        //     "caseId": ObjectId(caseId),
-        //     "strapId": ObjectId(strapId),
-        //     "user": user,
-        // }
-        // const db = MongoUtil.getDB();
-        // const result = await db.collection("listings").insertOne(createListing);
-        // res.status(201);
-        // res.send(result);
-    })
+    //         res.status(200);
+    //         res.json({
+    //             'message': "watch listing added"
+    //         })
+
+    //     } catch (e) {
+    //         res.status(500);
+    //         res.json({
+    //             "error": e
+    //         });
+    //         console.log(e);
+    //     }
+    // })
+
+
 
     app.get("/straps", async function (req, res) {
         let response = await MongoUtil.getDB().collection("straps").find().toArray();
@@ -163,7 +172,46 @@ async function main() {
     })
 
     app.get("/watch-listings", async function (req, res) {
+        let search = {};
+
+        if (req.query.brand) {
+            search["brand"] ={
+                $regex: req.query.brand,
+                $options: "i",
+            }
+        }
+
+        if (req.query.model){
+            search["model"] ={
+                $regex: req.query.model,
+                $options: "i",
+            }
+        }
+
+        if (req.query.movements){
+            search["movements"] ={
+                $regex: req.query.movements,
+                $options: "i"
+            }
+        }
+
+        if (req.query.gender) {
+            search["gender"] ={
+                $eq: req.query.gender,
+            }
+        }
+
+        if (req.query.username){
+            search["username"] ={
+                $eq: req.query.username,
+            }
+        }
+
+        
         let response = await MongoUtil.getDB().collection("listings").aggregate([
+            {
+                $match: search
+            },
             {
                 $lookup: {
                     from: "straps",
@@ -208,29 +256,46 @@ async function main() {
     //     res.json(results);
     // })
 
-    // app.put('/watch-listings/:listing_id', async function (req, res) {
-    //     try {
-    //         let { brand, model, price } = req.body;
-    //         let modifiedDocument = {
-    //             "brand": brand,
-    //             "model": model,
-    //             "price": price
-    //         }
-    //         const result = await MongoUtil.getDB().collection('listings').updateOne({
-    //             "_id": ObjectId(req.params.listing_id)
-    //         }, {
-    //             '$set': modifiedDocument
-    //         });
-    //         res.status(200);
-    //         res.json({
-    //             'message': 'Update success'
-    //         });
-    //     } catch (e) {
-    //         res.status(500);
-    //         res.send(e);
-    //         console.log(e);
-    //     }
-    // })
+    app.put('/watch-listings/:listing_id', async function (req, res) {
+        try {
+            let { brand, 
+                model,
+                price,
+                year_made,
+                glass_material,
+                movements,
+                image,
+                gender,
+                strapId,
+                caseId } = req.body;
+            let updatedWatchlisting = {
+                "brand": brand,
+                "model": model,
+                "price": price,
+                "year_made": year_made,
+                "water_resistance": water_resistance,
+                "glass_material": glass_material,
+                "movements": movements,
+                "image": image,
+                "gender": gender,
+                "caseId": ObjectId(caseId),
+                "strapId": ObjectId(strapId),
+            }
+            const result = await MongoUtil.getDB().collection('listings').updateOne({
+                "_id": ObjectId(req.params.listing_id)
+            }, {
+                '$set': updatedWatchlisting
+            });
+            res.status(200, result);
+            res.json({
+                'message': 'Update success'
+            });
+        } catch (e) {
+            res.status(500);
+            res.send(e);
+            console.log(e);
+        }
+    })
 
 
     // app.delete('/watch-listings/:listing_id', async function (req, res) {

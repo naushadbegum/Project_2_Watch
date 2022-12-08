@@ -88,8 +88,8 @@ async function main() {
     // })
     // app.post('/create-listings', validation.validation(listingValidation.listingSchema), async function (req, res) {
     app.post('/create-listings', async function (req, res) {
-console.log("req.body=", req.body)
-console.log(req.body.caseId, req.body.strapId);
+        console.log("req.body=", req.body)
+        console.log(req.body.caseId, req.body.strapId);
         let brand = req.body.brand;
         let model = req.body.model;
         let price = req.body.price;
@@ -103,7 +103,7 @@ console.log(req.body.caseId, req.body.strapId);
         let caseId = ObjectId(req.body.caseId);
         let user = req.body.user;
 
-        try{
+        try {
             let response = await MongoUtil.getDB().collection("listings").insertOne({
                 brand,
                 model,
@@ -127,7 +127,7 @@ console.log(req.body.caseId, req.body.strapId);
             });
             console.log(e)
         }
-        })
+    })
     // app.post('/create-listings', async function (req, res) {
     //     try {
     //         await MongoUtil.getDB().collection("listings").insertOne({
@@ -172,42 +172,48 @@ console.log(req.body.caseId, req.body.strapId);
     })
 
     app.get("/watch-listings", async function (req, res) {
+        console.log(req.query)
         let search = {};
+        // let projection = {
+        //     projection: {
+        //     "user.email":0,
+        //     }
+        // }
 
         if (req.query.brand) {
-            search["brand"] ={
+            search["brand"] = {
                 $regex: req.query.brand,
                 $options: "i",
             }
         }
 
-        if (req.query.model){
-            search["model"] ={
+        if (req.query.model) {
+            search["model"] = {
                 $regex: req.query.model,
                 $options: "i",
             }
         }
 
-        if (req.query.movements){
-            search["movements"] ={
+        if (req.query.movements) {
+            search["movements"] = {
                 $regex: req.query.movements,
                 $options: "i"
             }
         }
 
         if (req.query.gender) {
-            search["gender"] ={
+            search["gender"] = {
                 $eq: req.query.gender,
             }
         }
 
-        if (req.query.username){
-            search["username"] ={
-                $eq: req.query.username,
+        if (req.query.email) {
+            search["user.email"] ={
+                $regex: req.query.email,
+                $options: "i",
             }
         }
 
-        
         let response = await MongoUtil.getDB().collection("listings").aggregate([
             {
                 $match: search
@@ -232,37 +238,59 @@ console.log(req.body.caseId, req.body.strapId);
         res.json(response);
     })
 
-    // app.get('/watch-listings', async function (req, res) {
+    app.get("/watch-listing/:listing_id", async function (req, res) {
+        try {
+            let search = {};
+            // let projection = {
+            //     projection: {
+            //         "user.email": 0
+            //     }
+            // }
+            // if (req.params.id) {
+                search["_id"] = {
+                    "$eq": ObjectId(req.params.listing_id)
+                }
+            // }
+            let response = await MongoUtil.getDB().collection("listings").aggregate([
+                {
+                    $match: search
+                },
+                {
+                    $lookup: {
+                        from: "straps",
+                        localField: "strapId",
+                        foreignField: "_id",
+                        as: "strapId",
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "cases",
+                        localField: "caseId",
+                        foreignField: "_id",
+                        as: "caseId",
+                    }
+                }
+            ]).toArray();
+            res.json(response);
+        } catch (e) {
+            res.status(500);
+            res.json({
+                "message": "Internal server error. Please contact administrator"
+            })
+            console.log(e)
+        }
+    })
 
-    //     console.log(req.query);
-
-    //     let criteria = {};
-
-    //     if (req.query.glass_material) {
-    //         criteria['glass_material'] = {
-    //             "$regex": req.query.glass_material,
-    //             "$options": "i"
-    //         }
-    //     }
-
-    //     if (req.query.image) {
-    //         criteria['image'] = {
-    //             "$in": [req.query.image]
-    //         }
-    //     }
-
-    //     let results = await MongoUtil.getDB().collection("listings").find(criteria).toArray();
-    //     res.status(200);
-    //     res.json(results);
-    // })
 
     app.put('/watch-listings/:listing_id', async function (req, res) {
         try {
-            let { brand, 
+            let { brand,
                 model,
                 price,
                 year_made,
                 glass_material,
+                water_resistance,
                 movements,
                 image,
                 gender,
@@ -298,26 +326,26 @@ console.log(req.body.caseId, req.body.strapId);
     })
 
 
-    // app.delete('/watch-listings/:listing_id', async function (req, res) {
-    //     try {
-    //         await WatchRecordDAL.deleteWatchRecordByID(req.params.listing_id);
-    //         // await MongoUtil.getDB().collection('listings').deleteOne({
-    //         // "_id": ObjectId(req.params.listing_id)
-    //         // })
+    app.delete('/watch-listings/:listing_id', async function (req, res) {
+        try {
+            // await WatchRecordDAL.deleteWatchRecordByID(req.params.listing_id);
+            await MongoUtil.getDB().collection('listings').deleteOne({
+                "_id": ObjectId(req.params.listing_id)
+            })
 
-    //         res.status(200);
-    //         res.json({
-    //             'message': "Food sighting has been deleted"
-    //         })
+            res.status(200);
+            res.json({
+                'message': "Watch listing has been deleted"
+            })
 
-    //     } catch (e) {
-    //         res.status(500);
-    //         res.json({
-    //             "error": e
-    //         });
-    //         console.log(e);
-    //     }
-    // })
+        } catch (e) {
+            res.status(500);
+            res.json({
+                "error": e
+            });
+            console.log(e);
+        }
+    })
 }
 main();
 

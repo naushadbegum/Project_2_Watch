@@ -174,11 +174,11 @@ async function main() {
     app.get("/watch-listings", async function (req, res) {
         console.log(req.query)
         let search = {};
-        // let projection = {
-        //     projection: {
-        //     "user.email":0,
-        //     }
-        // }
+        let projection = {
+            projection: {
+            "user.email":0,
+            }
+        }
 
         if (req.query.brand) {
             search["brand"] = {
@@ -204,6 +204,13 @@ async function main() {
         if (req.query.gender) {
             search["gender"] = {
                 $eq: req.query.gender,
+            }
+        }
+
+        if (req.query.glass_material) {
+            search["glass_material"] ={
+                $regex : req.query.glass_material,
+                $options: "i"
             }
         }
 
@@ -234,18 +241,18 @@ async function main() {
                     as: "caseId",
                 }
             }
-        ]).toArray();
+        ],projection).toArray();
         res.json(response);
     })
 
     app.get("/watch-listing/:listing_id", async function (req, res) {
         try {
             let search = {};
-            // let projection = {
-            //     projection: {
-            //         "user.email": 0
-            //     }
-            // }
+            let projection = {
+                projection: {
+                "user.email":0,
+                }
+            }
             // if (req.params.id) {
                 search["_id"] = {
                     "$eq": ObjectId(req.params.listing_id)
@@ -271,7 +278,7 @@ async function main() {
                         as: "caseId",
                     }
                 }
-            ]).toArray();
+            ],projection).toArray();
             res.json(response);
         } catch (e) {
             res.status(500);

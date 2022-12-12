@@ -93,9 +93,9 @@ async function main() {
         let brand = req.body.brand;
         let model = req.body.model;
         let price = req.body.price;
-        let yearMade = req.body.year_made;
-        let waterResistance = req.body.water_resistance;
-        let glassMaterial = req.body.glass_material;
+        let year_made = req.body.year_made;
+        let water_resistance = req.body.water_resistance;
+        let glass_material = req.body.glass_material;
         let movements = req.body.movements;
         let image = req.body.image;
         let gender = req.body.gender;
@@ -108,9 +108,9 @@ async function main() {
                 brand,
                 model,
                 price,
-                yearMade,
-                waterResistance,
-                glassMaterial,
+                year_made,
+                water_resistance,
+                glass_material,
                 movements,
                 image,
                 gender,

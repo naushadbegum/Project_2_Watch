@@ -5,8 +5,8 @@ const ObjectId = require("mongodb").ObjectId;
 const MongoUtil = require("./MongoUtil");
 
 // const WatchRecordDAL = require('./WatchRecordDAL');
-// const validation = require('./Middlewares/validationMiddleware');
-// const listingValidation = require('./Validations/listingValidation');
+const validation = require('./Middlewares/validationMiddleware');
+const listingValidation = require('./Validations/listingValidation');
 
 const app = express();
 app.use(express.json());
@@ -86,8 +86,8 @@ async function main() {
     //         console.log(e)
     //     }
     // })
-    // app.post('/create-listings', validation.validation(listingValidation.listingSchema), async function (req, res) {
-    app.post('/create-listings', async function (req, res) {
+    // app.post('/create-listings',  async function (req, res) {
+    app.post('/create-listings', validation.validation(listingValidation.listingSchema), async function (req, res) {
         console.log("req.body=", req.body)
         console.log(req.body.caseId, req.body.strapId);
         let brand = req.body.brand;
